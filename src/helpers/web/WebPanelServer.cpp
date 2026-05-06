@@ -2682,7 +2682,6 @@ esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   }
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   return sendProgmemChunked(req, kWebPanelLoginHtml);
 }
 
@@ -2709,7 +2708,6 @@ esp_err_t WebPanelServer::handleApp(httpd_req_t* req) {
   }
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   return sendProgmemChunked(req, kWebPanelAppHtml);
 }
 
@@ -2720,7 +2718,6 @@ esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
   }
   ctx->self->noteActivity();
   httpd_resp_set_type(req, "text/html; charset=utf-8");
-  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
   if (ctx->self->_runner != nullptr && !ctx->self->_runner->isWebStatsEnabled()) {
     return sendProgmemChunked(req, kWebPanelStatsDisabledHtml);
   }
