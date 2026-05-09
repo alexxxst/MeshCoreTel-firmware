@@ -487,9 +487,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     .trend-section-copy p { margin:0; color:var(--text-muted); }
     .trend-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
     .trend-card { position:relative; background:linear-gradient(180deg,var(--surface2),var(--surface1)); border:1px solid var(--border); border-radius:14px; padding:14px; display:grid; gap:10px; }
-    .trend-head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+    .trend-head { display:flex; gap:10px; align-items:flex-start; }
+    .trend-info { flex:1; min-width:0; }
     .trend-title { font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; }
-    .trend-value { font-size:24px; font-weight:700; color:var(--text); }
+    .trend-value { font-size:24px; font-weight:700; color:var(--text); display:flex; align-items:baseline; justify-content:space-between; }
+    .trend-range { font-size:13px; font-weight:400; color:var(--text-muted); }
     .spark { width:100%; height:84px; border-radius:12px; background:rgba(255,255,255,.35); border:1px solid var(--border); display:block; }
     :root[data-theme="dark"] .spark { background:rgba(0,0,0,.16); }
     .spark-axis { display:flex; justify-content:space-between; gap:10px; color:var(--text-muted); min-height:1.3em; }
@@ -1774,22 +1776,29 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         eventsPanel.innerHTML = renderEventsSection(payload && payload.events ? payload.events : []);
       }
     }
-    function formatTrendValue(key, value) {
+    const kTrendFmt = {
+      battery: [v => Math.round(v), "mV"],
+      voltage: [v => (v/100).toFixed(2), "V"],
+      cpu_load: [v => Math.round(v), "%"],
+      memory: [v => formatBytes(v), ""],
+      packets: [v => Math.round(v), "pkts"],
+      error_rate: [v => (v/10).toFixed(1), "%"],
+      signal: [v => (v/4).toFixed(1), "dBm"],
+      noise_floor: [v => (v/4).toFixed(1), "dBm"],
+      sensor_temp: [v => (v/10).toFixed(1), "C"],
+      mcu_temp: [v => (v/10).toFixed(1), "C"],
+      humidity: [v => (v/10).toFixed(1), "%"],
+      pressure: [v => (v/10).toFixed(1), "hPa"],
+      pressure_altitude: [v => Math.round(v), "m"],
+      gps_altitude: [v => Math.round(v), "m"],
+      gps_satellites: [v => Math.round(v), "sats"],
+    };
+    function formatTrendValue(key, value, withUnit = true) {
       if (!Number.isFinite(value)) return "--";
-      if (key === "battery") return Math.round(value) + " mV";
-      if (key === "voltage") return (value / 100).toFixed(2) + " V";
-      if (key === "cpu_load") return Math.round(value) + " %";
-      if (key === "memory") return formatBytes(value);
-      if (key === "packets") return Math.round(value) + " pkts";
-      if (key === "error_rate") return (value / 10).toFixed(1) + " %";
-      if (key === "signal") return (value / 4).toFixed(1) + " dBm";
-      if (key === "noise_floor") return (value / 4).toFixed(1) + " dBm";
-      if (key === "sensor_temp" || key === "mcu_temp") return (value / 10).toFixed(1) + " C";
-      if (key === "humidity") return (value / 10).toFixed(1) + " %";
-      if (key === "pressure") return (value / 10).toFixed(1) + " hPa";
-      if (key === "pressure_altitude" || key === "gps_altitude") return Math.round(value) + " m";
-      if (key === "gps_satellites") return Math.round(value) + " sats";
-      return String(value);
+      const entry = kTrendFmt[key];
+      if (!entry) return String(value);
+      const num = entry[0](value);
+      return withUnit && entry[1] ? `${num} ${entry[1]}` : `${num}`;
     }
     function formatArchiveGigabytes(value) {
       if (!Number.isFinite(value) || value <= 0) return "--";
@@ -2045,9 +2054,12 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const card = document.getElementById("trend-" + key);
       if (!card) return;
       card.innerHTML = `<div class="trend-head">
-        <div>
+        <div class="trend-info">
           <div class="trend-title">${escapeHtml(title)}</div>
-          <div class="trend-value">${escapeHtml(value)}</div>
+          <div class="trend-value">
+            <span>${escapeHtml(value)}</span>
+            <span class="trend-range" id="head-range-${key}"></span>
+          </div>
         </div>
       </div>
       <div class="spark-tooltip" id="tooltip-${key}"></div>
@@ -2074,6 +2086,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         } else {
           axisLeftEl.textContent = "";
           axisRightEl.textContent = "No recent data";
+        }
+      }
+      const rangeEl = document.getElementById("head-range-" + key);
+      if (rangeEl && points.length) {
+        const values = points.map((p) => p[1]).filter((v) => Number.isFinite(v));
+        if (values.length) {
+          rangeEl.textContent = "min " + formatTrendValue(key, Math.min(...values), false) + " / max " + formatTrendValue(key, Math.max(...values), false);
         }
       }
     }
