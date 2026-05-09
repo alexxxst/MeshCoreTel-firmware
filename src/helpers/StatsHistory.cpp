@@ -233,6 +233,19 @@ bool buildPointValue(const HistorySample& sample, const HistorySample* previous,
     value = static_cast<int>(curr_total >= prev_total ? (curr_total - prev_total) : 0);
     return true;
   }
+  if (strcmp(series, "error_rate") == 0) {
+    if (previous == nullptr) {
+      return false;
+    }
+    const uint32_t d_errors = sample.recv_errors - previous->recv_errors;
+    const uint32_t d_recv   = sample.packets_recv - previous->packets_recv;
+    const uint32_t total    = d_errors + d_recv;
+    if (total == 0) {
+      return false;
+    }
+    value = (int)((d_errors * 1000u) / total);
+    return true;
+  }
   if (strcmp(series, "voltage") == 0) {
     if ((sample.sensor_flags & HISTORY_SENSOR_SUPPLY_VOLTAGE) == 0) {
       return false;
@@ -302,6 +315,9 @@ const char* seriesTitle(const char* series) {
   if (strcmp(series, "packets") == 0) {
     return "Packet Activity";
   }
+  if (strcmp(series, "error_rate") == 0) {
+    return "Error Rate";
+  }
   if (strcmp(series, "signal") == 0) {
     return "Signal";
   }
@@ -344,6 +360,9 @@ const char* seriesUnit(const char* series) {
   }
   if (strcmp(series, "packets") == 0) {
     return "pkts";
+  }
+  if (strcmp(series, "error_rate") == 0) {
+    return "per_mille";
   }
   if (strcmp(series, "signal") == 0) {
     return "rssi_x4";
@@ -1256,7 +1275,7 @@ bool StatsHistory::buildSeriesJson(const char* series, char* buffer, size_t buff
   bool have_current_value = false;
 
   getSampleFromOldest(_sample_count - 1, sample);
-  if (strcmp(series, "packets") == 0 && _sample_count >= 2) {
+  if ((strcmp(series, "packets") == 0 || strcmp(series, "error_rate") == 0) && _sample_count >= 2) {
     getSampleFromOldest(_sample_count - 2, previous);
     have_current_value = buildPointValue(sample, &previous, series, current_value);
   } else {

@@ -1386,7 +1386,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
             <div class="metric-label">${escapeHtml(label)}</div>
             <div class="hud-value">${escapeHtml(value)}</div>
           </div>
-          <div class="hud-sub">${escapeHtml(note)}</div>
+          ${note ? `<div class="hud-sub">${escapeHtml(note)}</div>` : ""}
         </div>
         <div class="meter"><div class="meter-fill${tone ? " " + tone : ""}" style="width:${pct}%;${invertFill ? "margin-left:auto;" : ""}"></div></div>
       </div>`;
@@ -1549,10 +1549,16 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const directTx = packets.direct_tx || 0;
       const floodRx = packets.flood_rx || 0;
       const directRx = packets.direct_rx || 0;
+      const recvErrors = packets.recv_errors || 0;
+      const totalAttempts = recv + recvErrors;
+      const errorRatePct = pctRatio(recvErrors, totalAttempts);
       return `<section class="hud-card">
         <h3>Packets</h3>
-        ${renderMeter("TX Flood Share", Math.round(pctRatio(floodTx, sent)) + "%", pctRatio(floodTx, sent), floodTx + " flood / " + directTx + " direct", false)}
-        ${renderMeter("RX Flood Share", Math.round(pctRatio(floodRx, recv)) + "%", pctRatio(floodRx, recv), floodRx + " flood / " + directRx + " direct", false)}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;min-width:0">
+          ${renderMeter("TX Flood Share", Math.round(pctRatio(floodTx, sent)) + "%", pctRatio(floodTx, sent), "", false)}
+          ${renderMeter("RX Flood Share", Math.round(pctRatio(floodRx, recv)) + "%", pctRatio(floodRx, recv), "", false)}
+        </div>
+        ${renderMeter("RX Error Rate", Math.round(errorRatePct) + "%", errorRatePct, recvErrors + " errors / " + totalAttempts + " attempts", false)}
         <div class="metric-grid">
           ${renderMetric("Sent", sent)}
           ${renderMetric("Recv", recv)}
@@ -1771,6 +1777,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       if (key === "voltage") return (value / 100).toFixed(2) + " V";
       if (key === "memory") return formatBytes(value);
       if (key === "packets") return Math.round(value) + " pkts";
+      if (key === "error_rate") return (value / 10).toFixed(1) + " %";
       if (key === "signal") return (value / 4).toFixed(1) + " dBm";
       if (key === "noise_floor") return (value / 4).toFixed(1) + " dBm";
       if (key === "sensor_temp" || key === "mcu_temp") return (value / 10).toFixed(1) + " C";
@@ -1808,6 +1815,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         if (recent >= 750) return "#d7a531";  // high
         return "#2f8f4e";                     // normal
       }
+      if (key === "error_rate") return "#ef4444";
       if (key === "gps_satellites") return "#2f8f4e";
       if (key === "signal") return "#3b82f6";
       if (key === "noise_floor") return "#94a3b8";
@@ -1830,6 +1838,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         const maxValue = Math.max(1, ...values);
         return { min:0, max:maxValue };
       }
+      if (key === "error_rate") return { min: 0, max: 1000 };
       if (key === "signal") {
         return { min:(-125 * 4), max:(-30 * 4) };
       }
@@ -1862,6 +1871,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           { from:    0, to:  750, color: "rgba(47,143,78,0.12)"  },  // normal   (< 75 °C)
           { from:  750, to:  950, color: "rgba(215,165,49,0.14)" },  // high     (75–95 °C)
           { from:  950, to: 1250, color: "rgba(191,75,75,0.14)"  }   // critical (> 95 °C)
+        ];
+      }
+      if (key === "error_rate") {
+        return [
+          { from:   0, to:  200, color: "rgba(47,143,78,0.12)"  },
+          { from: 200, to:  450, color: "rgba(215,165,49,0.14)" },
+          { from: 450, to: 1000, color: "rgba(191,75,75,0.14)"  }
         ];
       }
       if (key === "signal") {
@@ -2043,7 +2059,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const sensors = summaryPayload && summaryPayload.sensors ? summaryPayload.sensors : null;
       const gpsEnabled = !!(sensors && sensors.gps_enabled === true);
       const mcuTempPresent = !!(sensors && Number.isFinite(sensors.mcu_temp_c));
-      const order = ["battery", "memory", "signal", "noise_floor", "packets"];
+      const order = ["battery", "memory", "packets", "error_rate", "signal", "noise_floor"];
       if (mcuTempPresent) {
         order.splice(2, 0, "mcu_temp");
       }
