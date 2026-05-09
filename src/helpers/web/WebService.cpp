@@ -30,6 +30,7 @@ void WebService::prepareForOTAStart() {
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
   _suspended_for_ota = true;
   _panel.stopRedirectServer();
+  _panel.notifyOtaStarted();
 #endif
 }
 

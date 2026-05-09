@@ -2511,7 +2511,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
     };
     document.getElementById("otaBtn").onclick = async () => {
       if (confirm("Start OTA mode now?")) {
-        await runCommand("start ota");
+        const result = await runCommand("start ota");
+        if (result && result.ok) {
+          window.open(window.location.origin + "/update", "_blank");
+        }
       }
     };
     const AUTO_REFRESH_INTERVAL = 60;
@@ -2620,7 +2623,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 }  // namespace
 
 WebPanelServer::WebPanelServer()
-    : _runner(nullptr), _server(nullptr), _redirect_server(nullptr), _token{0}, _last_activity_ms(0), _route_context{this} {
+    : _runner(nullptr), _server(nullptr), _redirect_server(nullptr), _token{0}, _last_activity_ms(0), _route_context{this}, _ota_started(false) {
 }
 
 void WebPanelServer::setCommandRunner(WebPanelCommandRunner* runner) {
@@ -2669,12 +2672,14 @@ bool WebPanelServer::start() {
   httpd_uri_t login_uri = {.uri = "/login", .method = HTTP_POST, .handler = &WebPanelServer::handleLogin, .user_ctx = &_route_context};
   httpd_uri_t command_uri = {.uri = "/api/command", .method = HTTP_POST, .handler = &WebPanelServer::handleCommand, .user_ctx = &_route_context};
   httpd_uri_t stats_uri = {.uri = "/api/stats", .method = HTTP_GET, .handler = &WebPanelServer::handleStats, .user_ctx = &_route_context};
+  httpd_uri_t update = {.uri = "/update", .method = HTTP_GET, .handler = &WebPanelServer::handleOtaRedirect, .user_ctx = &_route_context};
   httpd_register_uri_handler(_server, &index_uri);
   httpd_register_uri_handler(_server, &app_uri);
   httpd_register_uri_handler(_server, &stats_page_uri);
   httpd_register_uri_handler(_server, &login_uri);
   httpd_register_uri_handler(_server, &command_uri);
   httpd_register_uri_handler(_server, &stats_uri);
+  httpd_register_uri_handler(_server, &update);
 
   httpd_config_t redirect_config = HTTPD_DEFAULT_CONFIG();
   redirect_config.server_port = 80;
@@ -2745,6 +2750,10 @@ void WebPanelServer::lockSession() {
   _last_activity_ms = 0;
 }
 
+void WebPanelServer::notifyOtaStarted() {
+  _ota_started = true;
+}
+
 esp_err_t WebPanelServer::handleIndex(httpd_req_t* req) {
   auto* ctx = static_cast<RouteContext*>(req->user_ctx);
   if (ctx == nullptr || ctx->self == nullptr) {
@@ -2792,6 +2801,34 @@ esp_err_t WebPanelServer::handleStatsPage(httpd_req_t* req) {
     return sendProgmem(req, kWebPanelStatsDisabledHtml);
   }
   return sendProgmem(req, kWebPanelAppHtml);
+}
+
+esp_err_t WebPanelServer::handleOtaRedirect(httpd_req_t* req) {
+  auto* ctx = static_cast<RouteContext*>(req->user_ctx);
+  if (ctx == nullptr || ctx->self == nullptr) {
+    return httpd_resp_send_500(req);
+  }
+  if (!ctx->self->_ota_started) {
+    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "OTA not started");
+    return ESP_OK;
+  }
+
+  char host[64] = {};
+  if (httpd_req_get_hdr_value_str(req, "Host", host, sizeof(host)) == ESP_OK && host[0] != '\0') {
+    char* colon = strchr(host, ':');
+    if (colon != nullptr) *colon = '\0';
+  } else {
+    strncpy(host, WiFi.localIP().toString().c_str(), sizeof(host) - 1);
+    host[sizeof(host) - 1] = '\0';
+  }
+  char location[80];
+  snprintf(location, sizeof(location), "http://%s/update", host);
+
+  httpd_resp_set_status(req, "302 Found");
+  httpd_resp_set_hdr(req, "Location", location);
+  httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+  httpd_resp_set_hdr(req, "Connection", "close");
+  return httpd_resp_send(req, "", 0);
 }
 
 esp_err_t WebPanelServer::handleLogin(httpd_req_t* req) {
@@ -2982,6 +3019,9 @@ bool WebPanelServer::shouldAutoLock(unsigned long) const {
 }
 
 void WebPanelServer::lockSession() {
+}
+
+void WebPanelServer::notifyOtaStarted() {
 }
 
 #endif

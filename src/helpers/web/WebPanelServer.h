@@ -46,6 +46,7 @@ public:
   bool hasSessionToken() const;
   bool shouldAutoLock(unsigned long now_ms) const;
   void lockSession();
+  void notifyOtaStarted();
 
 private:
 #if defined(ESP_PLATFORM) && WITH_WEB_PANEL
@@ -59,6 +60,7 @@ private:
   char _token[33];
   unsigned long _last_activity_ms;
   RouteContext _route_context;
+  bool _ota_started;
 
   static esp_err_t handleIndex(httpd_req_t* req);
   static esp_err_t handleHttpRedirect(httpd_req_t* req);
@@ -67,6 +69,7 @@ private:
   static esp_err_t handleLogin(httpd_req_t* req);
   static esp_err_t handleCommand(httpd_req_t* req);
   static esp_err_t handleStats(httpd_req_t* req);
+  static esp_err_t handleOtaRedirect(httpd_req_t* req);
 
   bool readRequestBody(httpd_req_t* req, char* buffer, size_t buffer_size) const;
   void refreshToken();
