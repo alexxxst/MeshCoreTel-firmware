@@ -2641,22 +2641,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         }
         if (xhr.status === 200) {
           barEl.style.width = "100%";
-          msgEl.textContent = "Done. Device is rebooting";
-          let wait = 4;
-          const iv = setInterval(async () => {
-            msgEl.textContent += '.';
-            if (msgEl.textContent.length > 85) { clearInterval(iv); msgEl.textContent = "Device did not come back online. =("; return; }
-            if (--wait) { return; }
-            wait = 1000; // prevent concurrent fetch
-            try {
-              if ((await fetch("/", { cache: "no-store" })).ok) {
-                clearInterval(iv);
-                msgEl.textContent = "Device is back online. Redirecting to login...";
-                setTimeout(redirectToLogin, 1500);
-                return;
-              }
-            } catch (_) {}
-            wait = 4;
+          let secs = 10;
+          const iv = setInterval(() => {
+            if (--secs <= 0) {
+              clearInterval(iv);
+              redirectToLogin();
+              return;
+            }
+            msgEl.textContent = `Done. Device is rebooting. Redirecting in ${secs}s...`;
           }, 1000);
         } else {
           msgEl.textContent = "Failed: " + (xhr.responseText || String(xhr.status));
