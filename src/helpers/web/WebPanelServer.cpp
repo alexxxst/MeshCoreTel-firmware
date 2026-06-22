@@ -1025,6 +1025,58 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       </div>
     </section>
 
+    <section class="card" id="regionsPanel" style="display:none">
+      <h2>Regions</h2>
+      <div class="stack">
+        <div class="section-group">
+          <h3>CURRENT REGIONS</h3>
+          <div class="field-card">
+            <label class="label">Region tree</label>
+            <div class="inline-actions">
+              <textarea id="regionCurrentTree" readonly rows="5" placeholder="-none-"
+                style="resize:none;cursor:default;flex:1;font-family:monospace;font-size:0.85em"></textarea>
+              <button class="iconbtn" id="regionRefreshBtn" title="Refresh">&#8635;</button>
+            </div>
+          </div>
+          <div id="regionRemoveList"></div>
+        </div>
+        <div class="section-group">
+          <h3>LOAD FROM WEB</h3>
+          <div class="field-card">
+            <label class="label" for="regionLoadUrl">URL</label>
+            <input id="regionLoadUrl"
+              placeholder="https://meshcore.hackru.ru/m/regions/regions.json"
+              style="width:100%">
+          </div>
+          <button class="savebtn" id="regionFetchBtn"
+            style="width:100%;margin-top:4px">Load regions</button>
+          <div id="regionFetchStatus" class="panel-note" style="min-height:1.4em;margin-top:6px"></div>
+        </div>
+        <div class="section-group" id="regionTreeSection" style="display:none">
+          <h3>SELECT REGIONS</h3>
+          <p class="panel-note">Select at least one of Москва / Московская область.
+            Flood column controls whether this region forwards flood packets (default on).
+            <a href="https://yandex.ru/maps/213/moscow/?ll=37.737793%2C55.750593&mode=usermaps&source=constructorLink&um=constructor%3A973aba73f7424656857386e6b8c30fd69d3b8f82fdc54345e7284d40ad47a277&z=8" target="_blank" rel="noopener">Карта секторов</a></p>
+          <table id="regionTable" style="width:100%;border-collapse:collapse;font-size:0.93em">
+            <thead>
+              <tr style="border-bottom:1px solid var(--clr-border,#ddd);opacity:0.6;font-size:0.85em">
+                <th style="text-align:left;padding:2px 4px;font-weight:600">Region</th>
+                <th style="text-align:center;padding:2px 4px;font-weight:600;width:52px">Flood</th>
+              </tr>
+            </thead>
+            <tbody id="regionTableBody"></tbody>
+          </table>
+          <div id="regionValidationMsg" class="panel-note"
+            style="color:var(--clr-warn,#c00);min-height:1.2em;margin-top:6px"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="savebtn action-caution" id="regionReplaceBtn" style="flex:1">Replace all</button>
+            <button class="savebtn" id="regionApplyBtn" style="flex:1">Apply (add)</button>
+          </div>
+          <div id="regionApplyStatus" class="panel-note" style="min-height:1.4em;margin-top:6px"></div>
+        </div>
+      </div>
+    </section>
+
     <section class="card" id="statsPanel" style="display:none">
       <h2>Stats</h2>
       <div class="quick" style="margin-bottom:12px">
@@ -2210,6 +2262,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       document.getElementById("quickCommandsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("mqttSettingsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("blacklistPanel").style.display = show && !isStatsPage ? "block" : "none";
+      document.getElementById("regionsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("infoPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("statsPanel").style.display = show && !isStatsPage ? "none" : "none";
       document.getElementById("statsPagePanel").style.display = show && isStatsPage ? "block" : "none";
@@ -2356,6 +2409,214 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       await loadBlacklistDisplay("blacklist chan list", "chanBlList");
       blStatusEl.textContent = `Applied ${applied} entr${applied === 1 ? "y" : "ies"}${failed ? `, ${failed} failed` : ""}.`;
     }
+
+    async function loadRegionDisplay() {
+      const result = await runCommand("region", { recordHistory: false });
+      const raw = result.ok ? (parseReplyValue(result.text) || "") : "";
+      document.getElementById("regionCurrentTree").value = raw;
+      const listEl = document.getElementById("regionRemoveList");
+      listEl.innerHTML = "";
+      const lines = raw.split("\n").filter(l => l.trim());
+      if (!lines.length) return;
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "margin-top:8px;display:flex;flex-direction:column;gap:3px";
+      for (const line of lines) {
+        const name = line.trim().replace(/[\^F\s]+$/, "").trim();
+        if (!name) continue;
+        const isWildcard = name === "*";
+        const depth = line.match(/^(\s*)/)[1].length;
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;align-items:center;gap:6px";
+        const prefix = document.createElement("span");
+        prefix.style.cssText = "font-family:monospace;font-size:0.82em;opacity:0.4;white-space:pre;flex-shrink:0";
+        prefix.textContent = depth > 0 ? "--".repeat(depth) + " " : "";
+        const code = document.createElement("span");
+        code.style.cssText = "font-family:monospace;font-size:0.88em;flex:1";
+        code.textContent = isWildcard ? "* (wildcard)" : name;
+        const floodOn = line.includes(" F");
+        const floodBadge = document.createElement("span");
+        floodBadge.style.cssText = "font-size:0.75em;flex-shrink:0;color:" + (floodOn ? "#4caf50" : "#e53935");
+        floodBadge.textContent = floodOn ? "Flood enabled" : "Flood disabled";
+        const floodBtn = document.createElement("button");
+        floodBtn.textContent = floodOn ? "Disable flood" : "Enable flood";
+        floodBtn.className = floodOn ? "savebtn action-caution" : "savebtn";
+        floodBtn.style.cssText = "padding:1px 8px;font-size:0.78em;width:auto;flex-shrink:0";
+        floodBtn.onclick = async () => {
+          const cmd = (floodOn ? "region denyf " : "region allowf ") + name;
+          const r = await runCommand(cmd, { recordHistory: false });
+          if (r.ok) { await runCommand("region save", { recordHistory: false }); await loadRegionDisplay(); }
+          else document.getElementById("regionApplyStatus").textContent =
+            "Flood toggle failed: " + parseReplyValue(r.text);
+        };
+        const remBtn = document.createElement("button");
+        remBtn.className = "savebtn action-caution";
+        remBtn.textContent = "Remove";
+        remBtn.title = isWildcard ? "Cannot remove wildcard" : "Remove " + name;
+        remBtn.style.cssText = "padding:1px 8px;font-size:0.78em;width:auto;flex-shrink:0";
+        if (isWildcard) {
+          remBtn.disabled = true;
+          remBtn.style.opacity = "0.35";
+        } else {
+          remBtn.onclick = async () => {
+            const r = await runCommand("region remove " + name, { recordHistory: false });
+            if (r.ok) await loadRegionDisplay();
+            else document.getElementById("regionApplyStatus").textContent =
+              "Remove failed: " + parseReplyValue(r.text) + " (may have children)";
+          };
+        }
+        row.append(prefix, code, floodBadge, floodBtn, remBtn);
+        wrap.appendChild(row);
+      }
+      listEl.appendChild(wrap);
+    }
+
+    let _regionTree = null;
+
+    function renderRegionTableNode(node, tbody, depth, parentCodes) {
+      if (!parentCodes) parentCodes = [];
+      const isFixed = !!node.fixed;
+      const indent = depth * 16;
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      tdName.style.cssText = "padding:2px 4px 2px " + (4 + indent) + "px";
+      const selCb = document.createElement("input");
+      selCb.type = "checkbox";
+      selCb.id = "rcb_" + node.code;
+      selCb.dataset.code = node.code;
+      selCb.dataset.fixed = isFixed ? "1" : "";
+      selCb.dataset.parents = parentCodes.join(",");
+      selCb.checked = isFixed;
+      selCb.disabled = isFixed;
+      selCb.style.marginRight = "6px";
+      if (!isFixed) {
+        selCb.addEventListener("change", () => {
+          if (selCb.checked) {
+            parentCodes.forEach(p => {
+              const pcb = document.getElementById("rcb_" + p);
+              if (pcb && !pcb.disabled) pcb.checked = true;
+            });
+          }
+        });
+      }
+      const lbl = document.createElement("label");
+      lbl.htmlFor = selCb.id;
+      lbl.textContent = node.code + " — " + node.title;
+      if (isFixed) lbl.style.opacity = "0.5";
+      const topRow = document.createElement("div");
+      topRow.style.cssText = "display:flex;align-items:center;gap:6px";
+      topRow.append(selCb, lbl);
+      tdName.appendChild(topRow);
+      const tdFlood = document.createElement("td");
+      tdFlood.style.cssText = "text-align:center;padding:2px 4px;width:52px";
+      const floodCb = document.createElement("input");
+      floodCb.type = "checkbox";
+      floodCb.id = "rfld_" + node.code;
+      floodCb.dataset.code = node.code;
+      floodCb.checked = true;
+      floodCb.disabled = isFixed;
+      if (isFixed) floodCb.style.opacity = "0.5";
+      tdFlood.appendChild(floodCb);
+      tr.append(tdName, tdFlood);
+      tbody.appendChild(tr);
+      for (const child of (node.children || [])) {
+        renderRegionTableNode(child, tbody, depth + 1, parentCodes.concat(node.code));
+      }
+    }
+
+    async function fetchAndRenderRegions() {
+      const url = (document.getElementById("regionLoadUrl").value || "").trim();
+      const statusEl = document.getElementById("regionFetchStatus");
+      if (!url) { statusEl.textContent = "Enter a URL first."; return; }
+      statusEl.textContent = "Fetching…";
+      let data;
+      try { data = await fetchRemoteJson(url); }
+      catch (e) { statusEl.textContent = "Fetch failed: " + e.message; return; }
+      if (!data.tree || !data.tree.code) {
+        statusEl.textContent = "Invalid format: missing 'tree' root"; return;
+      }
+      _regionTree = data.tree;
+      const tbody = document.getElementById("regionTableBody");
+      tbody.innerHTML = "";
+      renderRegionTableNode(_regionTree, tbody, 0);
+      document.getElementById("regionTreeSection").style.display = "block";
+      statusEl.textContent = "";
+    }
+
+    function collectRegionSelections() {
+      const tbody = document.getElementById("regionTableBody");
+      const rows = [...tbody.querySelectorAll("input[type=checkbox]")]
+        .filter(cb => !cb.id.startsWith("rfld_"));
+      const result = [];
+      for (const cb of rows) {
+        if (!cb.checked) continue;
+        const code = cb.dataset.code;
+        const flood = document.getElementById("rfld_" + code)?.checked ?? true;
+        result.push({ code, flood });
+      }
+      return result;
+    }
+
+    function findParentInTree(tree, targetCode, parentCode) {
+      if (tree.code === targetCode) return parentCode !== undefined ? parentCode : null;
+      for (const child of (tree.children || [])) {
+        const found = findParentInTree(child, targetCode, tree.code);
+        if (found !== undefined) return found;
+      }
+      return undefined;
+    }
+
+    async function sendRegionCommands(selections, statusEl) {
+      const cmds = [];
+      for (const { code, flood } of selections) {
+        const parent = findParentInTree(_regionTree, code, null);
+        cmds.push(parent ? "region put " + code + " " + parent : "region put " + code);
+        cmds.push(flood ? "region allowf " + code : "region denyf " + code);
+      }
+      cmds.push("region save");
+      let failed = 0;
+      for (const c of cmds) {
+        const r = await runCommand(c, { recordHistory: false });
+        if (!r.ok) failed++;
+      }
+      await loadRegionDisplay();
+      statusEl.textContent = failed ? "Done with " + failed + " error(s)." : "Applied and saved.";
+    }
+
+    async function applyRegionSelection() {
+      const validEl = document.getElementById("regionValidationMsg");
+      const statusEl = document.getElementById("regionApplyStatus");
+      validEl.textContent = "";
+      const selections = collectRegionSelections();
+      const nonFixed = selections.filter(s => !document.getElementById("rcb_" + s.code)?.dataset.fixed);
+      if (!nonFixed.some(r => r.code === "msk") && !nonFixed.some(r => r.code === "mosobl")) {
+        validEl.textContent = "Select at least Москва or Московская область."; return;
+      }
+      statusEl.textContent = "Applying…";
+      await sendRegionCommands(selections, statusEl);
+    }
+
+    async function replaceRegionSelection() {
+      const validEl = document.getElementById("regionValidationMsg");
+      const statusEl = document.getElementById("regionApplyStatus");
+      validEl.textContent = "";
+      const selections = collectRegionSelections();
+      if (!selections.some(r => r.code === "msk") && !selections.some(r => r.code === "mosobl")) {
+        validEl.textContent = "Select at least Москва or Московская область."; return;
+      }
+      statusEl.textContent = "Clearing existing regions…";
+      const raw = document.getElementById("regionCurrentTree").value;
+      const lines = raw.split("\n")
+        .filter(l => l.trim() && !l.trim().startsWith("*"))
+        .map(l => ({ name: l.trim().replace(/[\^F\s]+$/, "").trim(), depth: l.match(/^(\s*)/)[1].length }))
+        .filter(l => l.name && l.name !== "ru" && l.name !== "mow");
+      lines.sort((a, b) => b.depth - a.depth);
+      for (const { name } of lines) {
+        await runCommand("region remove " + name, { recordHistory: false });
+      }
+      statusEl.textContent = "Applying new regions…";
+      await sendRegionCommands(selections, statusEl);
+    }
+
     async function copyToClipboard(value, successMessage) {
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2614,6 +2875,13 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (r.ok) await loadBlacklistDisplay("blacklist path list", "pathBlList");
 	    };
 	    document.getElementById("blLoadWebBtn").onclick = () => applyRemoteBlacklist();
+	    document.getElementById("regionRefreshBtn").onclick = () => loadRegionDisplay();
+	    document.getElementById("regionFetchBtn").onclick = () => fetchAndRenderRegions();
+	    document.getElementById("regionApplyBtn").onclick = () => applyRegionSelection();
+	    document.getElementById("regionReplaceBtn").onclick = async () => {
+	      if (!confirm("Remove all existing regions then apply selection?")) return;
+	      await replaceRegionSelection();
+	    };
 	    document.getElementById("chanBlRefreshBtn").onclick = () => loadBlacklistDisplay("blacklist chan list", "chanBlList");
 	    document.getElementById("chanBlAddBtn").onclick = async () => {
 	      const v = document.getElementById("chanBlInput").value.trim();
@@ -2921,6 +3189,11 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadBlacklistDisplay("blacklist path list", "pathBlList"),
           () => loadBlacklistDisplay("blacklist chan list", "chanBlList"),
         ]);
+        await loadRegionDisplay();
+        const regionLoadUrlEl = document.getElementById("regionLoadUrl");
+        if (regionLoadUrlEl && !regionLoadUrlEl.value) {
+          regionLoadUrlEl.value = "https://meshcore.hackru.ru/m/regions/regions.json";
+        }
         const blLoadUrlEl = document.getElementById("blLoadUrl");
         if (blLoadUrlEl && !blLoadUrlEl.value) {
           const iata = (document.getElementById("mqttIata").value || "").trim().toUpperCase();
