@@ -110,7 +110,7 @@ private:
   NetworkStateProvider* _network;
 
 #if defined(ESP_PLATFORM)
-  static constexpr uint8_t kMeshcoretelBit = 0x01;
+  static constexpr uint8_t kSpbBit = 0x01;
   static constexpr uint8_t kLetsmeshEuBit = 0x02;
   static constexpr uint8_t kLetsmeshUsBit = 0x04;
   static constexpr uint8_t kMaxEnabledBrokers = 2;

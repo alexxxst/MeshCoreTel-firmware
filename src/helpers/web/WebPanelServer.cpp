@@ -2677,7 +2677,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (usOn) return "us";
 	      return "off";
 	    }
-	    function refreshMeshcoretelModeUi() {
+	    function refreshSpbModeUi() {
 	      const input = document.getElementById("mqttSpb");
 	      const enabled = !!(input && input.checked);
 	      const slider = document.getElementById("mqttSpbMode");
@@ -2732,7 +2732,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (inputId === "mqttLetsmeshEu" || inputId === "mqttLetsmeshUs") {
 	        refreshLetsmeshModeUi();
 	      } else if (inputId === "mqttSpb") {
-	        refreshMeshcoretelModeUi();
+	        refreshSpbModeUi();
 	        refreshLetsmeshModeUi();
 	      }
 	    }
@@ -2901,18 +2901,18 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        if (saveBtn) saveBtn.disabled = !mqttIataInput.value.trim();
 	      });
 	    }
-	    async function setMeshcoretelMode(enabled) {
+	    async function setSpbMode(enabled) {
 	      if (enabled && getLetsmeshMode() === "both") {
 	        await setLetsmeshMode("eu");
 	      }
 	      const result = await runCommand(enabled ? "set mqtt.spb on" : "set mqtt.spb off");
 	      if (!result.ok) {
-	        refreshMeshcoretelModeUi();
+	        refreshSpbModeUi();
 	        refreshLetsmeshModeUi();
 	        return;
 	      }
 	      setBrokerToggle("mqttSpb", enabled ? "on" : "off");
-	      refreshMeshcoretelModeUi();
+	      refreshSpbModeUi();
 	      refreshLetsmeshModeUi();
 	    }
 	    const spbModeSlider = document.getElementById("mqttSpbMode");
@@ -2921,7 +2921,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	        spbModeSlider.value = (Number.parseInt(spbModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
 	      });
 	      spbModeSlider.addEventListener("change", () => {
-	        setMeshcoretelMode((Number.parseInt(spbModeSlider.value, 10) || 0) >= 1);
+	        setSpbMode((Number.parseInt(spbModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    async function setLetsmeshMode(mode) {
@@ -3197,7 +3197,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       }
       loadRadioPresets();
 	    }
-	    refreshMeshcoretelModeUi();
+	    refreshSpbModeUi();
 	    refreshLetsmeshModeUi();
 	    initApp();
 	    if (isStatsPage) {

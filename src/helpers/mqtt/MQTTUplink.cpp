@@ -97,7 +97,7 @@ void logMqttMemorySnapshot(const char*, const char* = nullptr) {
 
 const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
     {"mc.meshcore.spb.ru", "mc.meshcore.spb.ru", "mc.meshcore.spb.ru", "mqtt://mc.meshcore.spb.ru:1883",
-     kMeshcoretelBit, true, "meshcore", "meshcore"},
+     kSpbBit, true, "meshcore", "meshcore"},
     {"letsmesh-eu", "letsmesh-eu", "mqtt-eu-v1.letsmesh.net", "wss://mqtt-eu-v1.letsmesh.net:443/mqtt",
      kLetsmeshEuBit, false, nullptr, nullptr},
     {"letsmesh-us", "letsmesh-us", "mqtt-us-v1.letsmesh.net", "wss://mqtt-us-v1.letsmesh.net:443/mqtt",
@@ -916,7 +916,7 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
            _prefs.iata,
-           broker_state(kMeshcoretelBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
+           broker_state(kSpbBit), broker_state(kLetsmeshEuBit), broker_state(kLetsmeshUsBit),
            _prefs.status_enabled ? "on" : "off", _prefs.tx_enabled ? "on" : "off");
 }
 
