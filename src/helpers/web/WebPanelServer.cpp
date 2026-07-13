@@ -659,7 +659,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <div class="inline-actions">
             <input id="publicKey" readonly disabled>
             <button id="copyPublicKeyBtn" class="iconbtn" title="Copy public key">&#x2398;</button>
-            <button id="meshcoretelProfileBtn" class="iconbtn" title="View on meshcoretel.ru" style="display:none">&#x2139;</button>
+            <button id="spbProfileBtn" class="iconbtn" title="View on mc.meshcore.spb.ru" style="display:none">&#x2139;</button>
           </div>
         </div>
       </div>
@@ -885,7 +885,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         <div class="field-card">
           <label class="label" for="mqttIata">MQTT IATA</label>
           <div class="inline-actions">
-            <input id="mqttIata" list="mqttIataList" placeholder="Specify IATA code (e.g. MOW)" onfocus="this.select()">
+            <input id="mqttIata" list="mqttIataList" placeholder="Specify IATA code (e.g. LED)" onfocus="this.select()">
             <datalist id="mqttIataList"></datalist>
             <button class="iconbtn" data-load-cmd="get mqtt.iata" data-load-input="mqttIata" title="Refresh MQTT IATA">&#8635;</button>
             <button class="savebtn" data-prefix="set mqtt.iata " data-input="mqttIata" disabled>Save</button>
@@ -911,24 +911,24 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	          <label class="label">MQTT Servers</label>
 	          <div class="broker-stack">
 	            <div class="broker-group">
-	              <div class="broker-group-title">MeshCoreTel</div>
+	              <div class="broker-group-title">MeshCore SPB</div>
 	              <div class="broker-grid single">
 	                <div class="broker-card">
 	                  <div class="broker-mode">
 	                    <div class="broker-row">
 	                      <div class="broker-copy">
-	                        <div class="broker-title">MeshCoreTel RU</div>
-	                        <div class="broker-state" id="mqttMeshcoretelState">Off</div>
+	                        <div class="broker-title">MeshCore SPB</div>
+	                        <div class="broker-state" id="mqttSpbState">Off</div>
 	                      </div>
 	                    </div>
 	                    <div class="mode-slider">
-	                      <input id="mqttMeshcoretelMode" type="range" min="0" max="1" step="1" value="0" aria-label="Meshcoretel mode">
+	                      <input id="mqttSpbMode" type="range" min="0" max="1" step="1" value="0" aria-label="Meshcore SPB mode">
 	                      <div class="mode-labels two" aria-hidden="true">
-	                        <div class="mode-label" data-meshcoretel-label="off">Off</div>
-	                        <div class="mode-label" data-meshcoretel-label="on">On</div>
+	                        <div class="mode-label" data-spb-label="off">Off</div>
+	                        <div class="mode-label" data-spb-label="on">On</div>
 	                      </div>
 	                    </div>
-	                    <input id="mqttMeshcoretel" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
+	                    <input id="mqttSpb" class="visually-hidden" type="checkbox" tabindex="-1" aria-hidden="true">
 	                  </div>
 	                </div>
 	              </div>
@@ -1017,7 +1017,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <h3>LOAD FROM WEB</h3>
           <div class="field-card">
             <label class="label" for="blLoadUrl">URL</label>
-            <input id="blLoadUrl" placeholder="https://meshcore.hackru.ru/m/blacklist/MOW.json" style="width:100%">
+            <input id="blLoadUrl" placeholder="https://meshcore.spb.ru/blacklist/LED.json" style="width:100%">
           </div>
           <button class="savebtn" id="blLoadWebBtn" style="width:100%;margin-top:4px">Load from web</button>
           <div id="blStatus" class="panel-note" style="min-height:1.4em;margin-top:6px"></div>
@@ -1045,7 +1045,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           <div class="field-card">
             <label class="label" for="regionLoadUrl">URL</label>
             <input id="regionLoadUrl"
-              placeholder="https://meshcore.hackru.ru/m/regions/regions.json"
+              placeholder="https://meshcore.spb.ru/regions.json"
               style="width:100%">
           </div>
           <button class="savebtn" id="regionFetchBtn"
@@ -1054,9 +1054,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         </div>
         <div class="section-group" id="regionTreeSection" style="display:none">
           <h3>SELECT REGIONS</h3>
-          <p class="panel-note">Select at least one of Москва / Московская область.
+          <p class="panel-note">Select at least one.
             Flood column controls whether this region forwards flood packets (default on).
-            <a href="https://yandex.ru/maps/213/moscow/?ll=37.737793%2C55.750593&mode=usermaps&source=constructorLink&um=constructor%3A973aba73f7424656857386e6b8c30fd69d3b8f82fdc54345e7284d40ad47a277&z=8" target="_blank" rel="noopener">Карта секторов</a></p>
+          </p>
           <table id="regionTable" style="width:100%;border-collapse:collapse;font-size:0.93em">
             <thead>
               <tr style="border-bottom:1px solid var(--clr-border,#ddd);opacity:0.6;font-size:0.85em">
@@ -1113,7 +1113,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 
   </main>
   <script>
-    const RADIO_PRESETS_URL = "https://api.vbart.ru/meshcore-firmware/v1/conf.json";
+    const RADIO_PRESETS_URL = "https://meshcore.spb.ru/config.json";
     const isStatsPage = window.location.pathname === "/stats";
     const PANEL_TITLE_KEY = "repeater-panel-title";
     let token = sessionStorage.getItem("repeater-token") || "";
@@ -1792,7 +1792,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
         if (!/^[0-9A-Fa-f]{64}$/.test(fullId)) {
           return shortId;
         }
-        const href = "https://meshcoretel.ru/" + encodeURIComponent(fullId.toUpperCase());
+        const href = "https://mc.meshcore.spb.ru/#/nodes/" + encodeURIComponent(fullId.toLowerCase());
         return `<a href="${href}" target="_blank" rel="noopener noreferrer">${shortId}</a>`;
       };
       const rows = neighbours.map((neighbour) => `<tr>
@@ -2262,7 +2262,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       document.getElementById("quickCommandsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("mqttSettingsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("blacklistPanel").style.display = show && !isStatsPage ? "block" : "none";
-      document.getElementById("regionsPanel").style.display = show && !isStatsPage ? "block" : "none";
+      // document.getElementById("regionsPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("infoPanel").style.display = show && !isStatsPage ? "block" : "none";
       document.getElementById("statsPanel").style.display = show && !isStatsPage ? "none" : "none";
       document.getElementById("statsPagePanel").style.display = show && isStatsPage ? "block" : "none";
@@ -2588,9 +2588,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       validEl.textContent = "";
       const selections = collectRegionSelections();
       const nonFixed = selections.filter(s => !document.getElementById("rcb_" + s.code)?.dataset.fixed);
-      if (!nonFixed.some(r => r.code === "msk") && !nonFixed.some(r => r.code === "mosobl")) {
-        validEl.textContent = "Select at least Москва or Московская область."; return;
-      }
       statusEl.textContent = "Applying…";
       await sendRegionCommands(selections, statusEl);
     }
@@ -2600,9 +2597,6 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
       const statusEl = document.getElementById("regionApplyStatus");
       validEl.textContent = "";
       const selections = collectRegionSelections();
-      if (!selections.some(r => r.code === "msk") && !selections.some(r => r.code === "mosobl")) {
-        validEl.textContent = "Select at least Москва or Московская область."; return;
-      }
       statusEl.textContent = "Clearing existing regions…";
       const raw = document.getElementById("regionCurrentTree").value;
       const lines = raw.split("\n")
@@ -2684,14 +2678,14 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      return "off";
 	    }
 	    function refreshMeshcoretelModeUi() {
-	      const input = document.getElementById("mqttMeshcoretel");
+	      const input = document.getElementById("mqttSpb");
 	      const enabled = !!(input && input.checked);
-	      const slider = document.getElementById("mqttMeshcoretelMode");
+	      const slider = document.getElementById("mqttSpbMode");
 	      if (slider) {
 	        slider.value = enabled ? "1" : "0";
 	      }
-	      document.querySelectorAll("[data-meshcoretel-label]").forEach((label) => {
-	        label.classList.toggle("active", label.dataset.meshcoretelLabel === (enabled ? "on" : "off"));
+	      document.querySelectorAll("[data-spb-label]").forEach((label) => {
+	        label.classList.toggle("active", label.dataset.spbLabel === (enabled ? "on" : "off"));
 	      });
 	    }
 	    function getLetsmeshModeIndex(mode) {
@@ -2699,15 +2693,15 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      return Object.prototype.hasOwnProperty.call(order, mode) ? order[mode] : 0;
 	    }
 	    function clampLetsmeshModeIndex(index) {
-	      const meshcoretel = document.getElementById("mqttMeshcoretel");
-	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
+	      const spbmesh = document.getElementById("mqttSpb");
+	      const spbEnabled = !!(spbmesh && spbmesh.checked);
 	      const bounded = Math.max(0, Math.min(3, index));
-	      return meshcoretelEnabled && bounded === 3 ? 1 : bounded;
+	      return spbEnabled && bounded === 3 ? 1 : bounded;
 	    }
 	    function refreshLetsmeshModeUi() {
 	      const mode = getLetsmeshMode();
-	      const meshcoretel = document.getElementById("mqttMeshcoretel");
-	      const meshcoretelEnabled = !!(meshcoretel && meshcoretel.checked);
+	      const spbmesh = document.getElementById("mqttSpb");
+	      const spbEnabled = !!(spbmesh && spbmesh.checked);
 	      const state = document.getElementById("mqttLetsmeshModeState");
 	      const labels = { off:"Off", eu:"EU", us:"US", both:"Both" };
 	      if (state) {
@@ -2722,7 +2716,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      document.querySelectorAll("[data-letsmesh-label]").forEach((label) => {
 	        const labelMode = label.dataset.letsmeshLabel;
 	        label.classList.toggle("active", labelMode === mode);
-	        label.classList.toggle("disabled", meshcoretelEnabled && labelMode === "both");
+	        label.classList.toggle("disabled", spbEnabled && labelMode === "both");
 	      });
 	    }
 	    function setBrokerToggle(inputId, state) {
@@ -2737,7 +2731,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      }
 	      if (inputId === "mqttLetsmeshEu" || inputId === "mqttLetsmeshUs") {
 	        refreshLetsmeshModeUi();
-	      } else if (inputId === "mqttMeshcoretel") {
+	      } else if (inputId === "mqttSpb") {
 	        refreshMeshcoretelModeUi();
 	        refreshLetsmeshModeUi();
 	      }
@@ -2911,28 +2905,28 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	      if (enabled && getLetsmeshMode() === "both") {
 	        await setLetsmeshMode("eu");
 	      }
-	      const result = await runCommand(enabled ? "set mqtt.meshcoretel on" : "set mqtt.meshcoretel off");
+	      const result = await runCommand(enabled ? "set mqtt.spb on" : "set mqtt.spb off");
 	      if (!result.ok) {
 	        refreshMeshcoretelModeUi();
 	        refreshLetsmeshModeUi();
 	        return;
 	      }
-	      setBrokerToggle("mqttMeshcoretel", enabled ? "on" : "off");
+	      setBrokerToggle("mqttSpb", enabled ? "on" : "off");
 	      refreshMeshcoretelModeUi();
 	      refreshLetsmeshModeUi();
 	    }
-	    const meshcoretelModeSlider = document.getElementById("mqttMeshcoretelMode");
-	    if (meshcoretelModeSlider) {
-	      meshcoretelModeSlider.addEventListener("input", () => {
-	        meshcoretelModeSlider.value = (Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
+	    const spbModeSlider = document.getElementById("mqttSpbMode");
+	    if (spbModeSlider) {
+	      spbModeSlider.addEventListener("input", () => {
+	        spbModeSlider.value = (Number.parseInt(spbModeSlider.value, 10) || 0) >= 1 ? "1" : "0";
 	      });
-	      meshcoretelModeSlider.addEventListener("change", () => {
-	        setMeshcoretelMode((Number.parseInt(meshcoretelModeSlider.value, 10) || 0) >= 1);
+	      spbModeSlider.addEventListener("change", () => {
+	        setMeshcoretelMode((Number.parseInt(spbModeSlider.value, 10) || 0) >= 1);
 	      });
 	    }
 	    async function setLetsmeshMode(mode) {
-	      const meshcoretel = document.getElementById("mqttMeshcoretel");
-	      if (mode === "both" && meshcoretel && meshcoretel.checked) {
+	      const spbmesh = document.getElementById("mqttSpb");
+	      if (mode === "both" && spbmesh && spbmesh.checked) {
 	        refreshLetsmeshModeUi();
 	        return;
 	      }
@@ -3155,9 +3149,9 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get public.key", "publicKey", "uppercase", quiet)
         ]);
         const pubKeyValue = document.getElementById("publicKey").value.trim();
-        const profileBtn = document.getElementById("meshcoretelProfileBtn");
+        const profileBtn = document.getElementById("spbProfileBtn");
         if (profileBtn && /^[0-9A-F]{64}$/.test(pubKeyValue)) {
-          profileBtn.onclick = () => window.open("https://meshcoretel.ru/" + encodeURIComponent(pubKeyValue), "_blank", "noopener,noreferrer");
+          profileBtn.onclick = () => window.open("https://mc.meshcore.spb.ru/#/nodes/" + encodeURIComponent(pubKeyValue.toLowerCase()), "_blank", "noopener,noreferrer");
           profileBtn.style.display = "";
         }
         await loadSection("Loading repeater settings...", [
@@ -3181,7 +3175,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadField("get mqtt.iata", "mqttIata", null, quiet),
           () => loadField("get mqtt.owner", "mqttOwner", null, quiet),
           () => loadField("get mqtt.email", "mqttEmail", null, quiet),
-          () => loadBrokerState("get mqtt.meshcoretel", "mqttMeshcoretel", quiet),
+          () => loadBrokerState("get mqtt.spb", "mqttSpb", quiet),
           () => loadBrokerState("get mqtt.letsmesh-eu", "mqttLetsmeshEu", quiet),
           () => loadBrokerState("get mqtt.letsmesh-us", "mqttLetsmeshUs", quiet)
         ]);
@@ -3189,15 +3183,10 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
           () => loadBlacklistDisplay("blacklist path list", "pathBlList"),
           () => loadBlacklistDisplay("blacklist chan list", "chanBlList"),
         ]);
-        await loadRegionDisplay();
-        const regionLoadUrlEl = document.getElementById("regionLoadUrl");
-        if (regionLoadUrlEl && !regionLoadUrlEl.value) {
-          regionLoadUrlEl.value = "https://meshcore.hackru.ru/m/regions/regions.json";
-        }
         const blLoadUrlEl = document.getElementById("blLoadUrl");
         if (blLoadUrlEl && !blLoadUrlEl.value) {
           const iata = (document.getElementById("mqttIata").value || "").trim().toUpperCase();
-          if (iata) blLoadUrlEl.value = `https://meshcore.hackru.ru/m/blacklist/${iata}.json`;
+          if (iata) blLoadUrlEl.value = `https://meshcore.spb.ru/blacklist/${iata}.json`;
         }
         statusEl.textContent = "Ready";
       } catch (error) {

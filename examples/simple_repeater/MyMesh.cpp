@@ -2633,7 +2633,7 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     sprintf(reply, "> %s", mqtt.isRawEnabled() ? "on" : "off");
   } else if (memcmp(command, "get mqtt.tx", 11) == 0) {
     sprintf(reply, "> %s", mqtt.isTxEnabled() ? "on" : "off");
-  } else if (memcmp(command, "get mqtt.meshcoretel", 21) == 0) {
+  } else if (memcmp(command, "get mqtt.spb", 13) == 0) {
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x01) ? "on" : "off");
   } else if (memcmp(command, "get mqtt.letsmesh-eu", 21) == 0 || memcmp(command, "get mqtt.letsmesh.eu", 21) == 0) {
     sprintf(reply, "> %s", mqtt.isEndpointEnabled(0x02) ? "on" : "off");
@@ -2669,7 +2669,7 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
   } else if (memcmp(command, "set mqtt.status ", 16) == 0) {
     mqtt.setStatusEnabled(memcmp(&command[16], "on", 2) == 0);
     strcpy(reply, "OK");
-  } else if (memcmp(command, "set mqtt.meshcoretel ", 21) == 0) {
+  } else if (memcmp(command, "set mqtt.spb ", 13) == 0) {
     if (mqtt.setEndpointEnabled(0x01, memcmp(&command[21], "on", 2) == 0)) {
       strcpy(reply, "OK");
     } else {

@@ -17,7 +17,7 @@
 #include <time.h>
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION "v1.16.0-vbart-meshcoretel"
+  #define FIRMWARE_VERSION "v1.16.0-meshcore.spb.ru"
 #endif
 
 #ifndef FIRMWARE_BUILD_DATE
@@ -25,7 +25,7 @@
 #endif
 
 #ifndef CLIENT_VERSION
-  #define CLIENT_VERSION "vbart-meshcoretel"
+  #define CLIENT_VERSION "meshcore.spb.ru"
 #endif
 
 #ifndef MQTT_DEBUG
@@ -96,7 +96,7 @@ void logMqttMemorySnapshot(const char*, const char* = nullptr) {
 }
 
 const MQTTUplink::BrokerSpec MQTTUplink::kBrokerSpecs[3] = {
-    {"meshcoretel", "meshcoretel", "meshcoretel.ru", "mqtt://meshcoretel.ru:1883",
+    {"mc.meshcore.spb.ru", "mc.meshcore.spb.ru", "mc.meshcore.spb.ru", "mqtt://mc.meshcore.spb.ru:1883",
      kMeshcoretelBit, true, "meshcore", "meshcore"},
     {"letsmesh-eu", "letsmesh-eu", "mqtt-eu-v1.letsmesh.net", "wss://mqtt-eu-v1.letsmesh.net:443/mqtt",
      kLetsmeshEuBit, false, nullptr, nullptr},
@@ -912,7 +912,7 @@ void MQTTUplink::formatStatusReply(char* reply, size_t reply_size) const {
     return "retry";
   };
 
-  snprintf(reply, reply_size, "> wifi:%s ntp:%s iata:%s meshcoretel:%s letsmesh-eu:%s letsmesh-us:%s status:%s tx:%s",
+  snprintf(reply, reply_size, "> wifi:%s ntp:%s iata:%s meshcore.spb.ru:%s letsmesh-eu:%s letsmesh-us:%s status:%s tx:%s",
            (_network != nullptr && _network->isWifiConnected()) ? "up" : "down",
            (_network != nullptr && _network->hasTimeSync()) ? "up" : "wait",
            _prefs.iata,
