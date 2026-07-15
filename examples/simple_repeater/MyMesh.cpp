@@ -2670,7 +2670,7 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     mqtt.setStatusEnabled(memcmp(&command[16], "on", 2) == 0);
     strcpy(reply, "OK");
   } else if (memcmp(command, "set mqtt.spb ", 13) == 0) {
-    if (mqtt.setEndpointEnabled(0x01, memcmp(&command[21], "on", 2) == 0)) {
+    if (mqtt.setEndpointEnabled(0x01, memcmp(&command[13], "on", 2) == 0)) {
       strcpy(reply, "OK");
     } else {
       strcpy(reply, "Err - max 2 mqtt brokers");

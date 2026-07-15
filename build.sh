@@ -166,15 +166,15 @@ build_firmware() {
   fi
 
   # set artifact version string
-  # e.g: v1.2.3-meshcoretel-v1.0.1-abcdef
+  # e.g: v1.2.3-meshcore.spb.ru-v1.0.1-abcdef
   FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION}"
   if [ -n "$MESHCORETEL_VERSION" ]; then
-    FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION_BASE}-vbart-meshcoretel-${MESHCORETEL_VERSION}"
+    FIRMWARE_VERSION_BASE="${FIRMWARE_VERSION_BASE}-meshcore.spb.ru-${MESHCORETEL_VERSION}"
   fi
   FIRMWARE_VERSION_STRING="${FIRMWARE_VERSION_BASE}-${COMMIT_HASH}"
-  CLIENT_VERSION_STRING="meshcoretel-${COMMIT_HASH}"
+  CLIENT_VERSION_STRING="meshcore.spb.ru-${COMMIT_HASH}"
   if [ -n "$MESHCORETEL_VERSION" ]; then
-    CLIENT_VERSION_STRING="vbart-meshcoretel-${MESHCORETEL_VERSION}-${COMMIT_HASH}"
+    CLIENT_VERSION_STRING="meshcore.spb.ru-${MESHCORETEL_VERSION}-${COMMIT_HASH}"
   fi
 
   # craft filename
@@ -277,7 +277,14 @@ build_companion_wifi_firmwares() {
 
 build_repeater_mqtt_firmwares() {
 
-  build_all_firmwares_by_suffix "_repeater_mqtt"
+  build_firmware "Heltec_v3_repeater_mqtt"
+  build_firmware "heltec_v4_repeater_mqtt"
+  build_firmware "heltec_v4_repeater_bridge_espnow_mqtt"
+  build_firmware "MTL_1_repeater_mqtt"
+  build_firmware "MTL_1_SX1268_repeater_mqtt"
+  build_firmware "MTL_1_SX1268_repeater_bridge_espnow_mqtt"
+
+  # build_all_firmwares_by_suffix "_repeater_mqtt"
 
 }
 
