@@ -157,7 +157,7 @@ build_firmware() {
   fi
 
   # set firmware build date
-  FIRMWARE_BUILD_DATE=$(date '+%d-%b-%Y')
+  FIRMWARE_BUILD_DATE=$(date '+%d-%m-%Y')
 
   # get FIRMWARE_VERSION, which should be provided by the environment
   if [ -z "$FIRMWARE_VERSION" ]; then
