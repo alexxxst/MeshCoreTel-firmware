@@ -128,11 +128,11 @@ struct NeighbourInfo {
 };
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "2026-07-13"
+  #define FIRMWARE_BUILD_DATE   "2026-09-02"
 #endif
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION   "v1.16.0-meshcore.spb.ru"
+  #define FIRMWARE_VERSION   "v1.16+cad-meshcore.spb.ru"
 #endif
 
 #define FIRMWARE_ROLE "repeater"
