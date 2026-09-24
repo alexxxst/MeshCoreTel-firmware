@@ -108,6 +108,9 @@ struct WebSensorSnapshot {
 #define MAX_PATH_PREFIX_LEN  4
 #define MAX_BLACKLIST_ENTRIES 64
 #define MAX_CHAN_NAME_FILTERS 32
+// Conservative cap for blacklist CLI replies: serial (160) and over-radio
+// (161, minus optional 3-byte 'xx|' prefix) buffers are smaller than MAX_PACKET_PAYLOAD.
+#define MAX_BLACKLIST_REPLY_LEN 150
 
 struct BlacklistEntry {
   uint8_t len;                          // 0 = empty slot
@@ -128,7 +131,7 @@ struct NeighbourInfo {
 };
 
 #ifndef FIRMWARE_BUILD_DATE
-  #define FIRMWARE_BUILD_DATE   "2026-09-02"
+  #define FIRMWARE_BUILD_DATE   "2026-09-24"
 #endif
 
 #ifndef FIRMWARE_VERSION
@@ -238,13 +241,13 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks, public WebPanelComm
   void saveBlacklist(const char* fname, const BlacklistEntry* list);
   bool addToBlacklist(BlacklistEntry* list, const uint8_t* prefix, uint8_t len);
   bool removeFromBlacklist(BlacklistEntry* list, const uint8_t* prefix, uint8_t len);
-  void formatBlacklist(const BlacklistEntry* list, char* reply);
+  void formatBlacklist(const BlacklistEntry* list, char* reply, size_t reply_sz);
   void deriveChanNameFilter(ChanNameFilter& entry, const char* name);
   bool addChanNameFilter(const char* name);
   bool removeChanNameFilter(const char* name);
   void loadChanBlacklist(const char* fname);
   void saveChanBlacklist(const char* fname);
-  void formatChanBlacklist(char* reply);
+  void formatChanBlacklist(char* reply, size_t reply_sz);
 
 protected:
   float getAirtimeBudgetFactor() const override {
