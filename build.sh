@@ -62,6 +62,8 @@ $ sh build.sh build-room-server-firmwares
 Environment Variables:
   DISABLE_DEBUG=1: Disables all debug logging flags (MESH_DEBUG, MESH_PACKET_LOGGING, etc.)
                    If not set, debug flags from variant platformio.ini files are used.
+  FIRMWARE_VERSION_STRIP: Suffix stripped from FIRMWARE_VERSION when naming the output
+                          archive. Defaults to "-meshcore.spb.ru" if not set.
 
 Examples:
 Build without debug logging:
@@ -146,6 +148,15 @@ disable_debug_flags() {
   fi
 }
 
+# pack all files produced for the current firmware into a single short-named zip, then remove originals
+package_firmware_archive() {
+  # $1 = archive base name (without .zip); uses FIRMWARE_FILENAME for the produced files
+  local archive_base=$1
+  if compgen -G "out/${FIRMWARE_FILENAME}*" > /dev/null; then
+    ( cd out && zip -j -q "${archive_base}.zip" ${FIRMWARE_FILENAME}* && rm -f ${FIRMWARE_FILENAME}* )
+  fi
+}
+
 # build firmware for the provided pio env in $1
 build_firmware() {
   # get env platform for post build actions
@@ -181,6 +192,10 @@ build_firmware() {
   # e.g: RAK_4631_Repeater-v1.0.0-SHA
   FIRMWARE_FILENAME="$1-${FIRMWARE_VERSION_STRING}"
 
+  # short version for the archive name, e.g. v1.16+cad-meshcore.spb.ru -> v1.16+cad
+  ARCHIVE_VERSION="${FIRMWARE_VERSION%${FIRMWARE_VERSION_STRIP:--meshcore.spb.ru}}"
+  ARCHIVE_FILENAME="$1-${ARCHIVE_VERSION}"
+
   # add build metadata to end of existing platformio build flags in environment vars
   export PLATFORMIO_BUILD_FLAGS="${PLATFORMIO_BUILD_FLAGS} -DFIRMWARE_BUILD_DATE='\"${FIRMWARE_BUILD_DATE}\"' -DFIRMWARE_VERSION='\"${FIRMWARE_VERSION_STRING}\"' -DCLIENT_VERSION='\"${CLIENT_VERSION_STRING}\"'"
 
@@ -215,6 +230,9 @@ build_firmware() {
     cp .pio/build/$1/firmware.bin out/${FIRMWARE_FILENAME}.bin 2>/dev/null || true
     cp .pio/build/$1/firmware.uf2 out/${FIRMWARE_FILENAME}.uf2 2>/dev/null || true
   fi
+
+  # package the produced files into a single archive, keeping only the zip
+  package_firmware_archive "$ARCHIVE_FILENAME"
 
 }
 
