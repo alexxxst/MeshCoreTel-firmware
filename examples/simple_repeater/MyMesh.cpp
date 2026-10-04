@@ -982,10 +982,38 @@ static bool isHexStr(const char* s, int len) {
   return true;
 }
 
+// Appends a "\n(+N more)" truncation indicator, dropping trailing shown entries
+// as needed so the indicator itself always fits. 'ends[k]' holds the char offset
+// (relative to 'reply') just after the k-th shown entry. Caller guarantees count < total.
+// Returns the pointer where the caller should write the terminating null.
+static char* appendMoreSuffix(char* reply, char* end, const int* ends, int count, int total) {
+  char suffix[24];
+  int sl = 0;
+  while (count > 0) {
+    sl = snprintf(suffix, sizeof(suffix), "\n(+%d more)", total - count);
+    if (ends[count - 1] + sl <= (int)(end - reply)) break;
+    count--;
+  }
+  char* dp = reply + (count > 0 ? ends[count - 1] : 0);
+  if (count == 0) {
+    sl = snprintf(suffix, sizeof(suffix), "(+%d more)", total);
+  }
+  if (dp + sl <= end) {
+    memcpy(dp, suffix, sl);
+    dp += sl;
+  }
+  return dp;
+}
+
 void MyMesh::formatBlacklist(const BlacklistEntry* list, char* reply, size_t reply_sz) {
   if (reply_sz == 0) return;
-  char* dp = reply;
   char* end = reply + reply_sz - 1;  // always keep room for the terminating null
+  int total = 0;
+  for (int i = 0; i < MAX_BLACKLIST_ENTRIES; i++) {
+    if (list[i].len != 0) total++;
+  }
+  int ends[MAX_BLACKLIST_ENTRIES];
+  char* dp = reply;
   int count = 0;
   for (int i = 0; i < MAX_BLACKLIST_ENTRIES; i++) {
     if (list[i].len == 0) continue;
@@ -994,9 +1022,12 @@ void MyMesh::formatBlacklist(const BlacklistEntry* list, char* reply, size_t rep
     if (count > 0) *dp++ = '\n';
     mesh::Utils::toHex(dp, list[i].prefix, list[i].len);
     dp += list[i].len * 2;
-    count++;
+    ends[count++] = (int)(dp - reply);
   }
-  if (count == 0) {
+  if (count < total) {
+    dp = appendMoreSuffix(reply, end, ends, count, total);
+  }
+  if (total == 0) {
     if (reply_sz >= sizeof("-none-")) {
       strcpy(reply, "-none-");
     } else {
@@ -1184,8 +1215,14 @@ void MyMesh::saveChanBlacklist(const char* fname) {
 
 void MyMesh::formatChanBlacklist(char* reply, size_t reply_sz) {
   if (reply_sz == 0) return;
-  char* dp = reply;
   char* end = reply + reply_sz - 1;  // always keep room for the terminating null
+  int total = 0;
+  for (int i = 0; i < MAX_BLACKLIST_ENTRIES; i++) {
+    if (_chan_blacklist[i].len != 0) total++;
+  }
+  total += _num_chan_name_filters;
+  int ends[MAX_BLACKLIST_ENTRIES + MAX_CHAN_NAME_FILTERS];
+  char* dp = reply;
   int count = 0;
   // Format hex prefix entries
   for (int i = 0; i < MAX_BLACKLIST_ENTRIES; i++) {
@@ -1195,7 +1232,7 @@ void MyMesh::formatChanBlacklist(char* reply, size_t reply_sz) {
     if (count > 0) *dp++ = '\n';
     mesh::Utils::toHex(dp, _chan_blacklist[i].prefix, _chan_blacklist[i].len);
     dp += _chan_blacklist[i].len * 2;
-    count++;
+    ends[count++] = (int)(dp - reply);
   }
   // Format #channel_name entries
   for (int i = 0; i < _num_chan_name_filters; i++) {
@@ -1205,9 +1242,12 @@ void MyMesh::formatChanBlacklist(char* reply, size_t reply_sz) {
     if (count > 0) *dp++ = '\n';
     memcpy(dp, _chan_name_filters[i].name, len);
     dp += len;
-    count++;
+    ends[count++] = (int)(dp - reply);
   }
-  if (count == 0) {
+  if (count < total) {
+    dp = appendMoreSuffix(reply, end, ends, count, total);
+  }
+  if (total == 0) {
     if (reply_sz >= sizeof("-none-")) {
       strcpy(reply, "-none-");
     } else {
