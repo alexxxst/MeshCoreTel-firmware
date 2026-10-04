@@ -961,7 +961,7 @@ const char kWebPanelAppHtml[] PROGMEM = R"HTML(
 	            </div>
 	          </div>
 	          <div class="panel-note">Only two brokers can be enabled at the same time.</div>
-	          <div id="mqttBrokerWarning" class="panel-warning">MQTT IATA is unset. Set it before enabling MeshCoreTel or LetsMesh brokers.</div>
+	          <div id="mqttBrokerWarning" class="panel-warning">MQTT IATA is unset. Set it before enabling brokers.</div>
 	        </div>
 	      </div>
 	    </section>
