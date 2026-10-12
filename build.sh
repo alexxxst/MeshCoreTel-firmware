@@ -297,6 +297,7 @@ build_repeater_mqtt_firmwares() {
   build_firmware "heltec_v4_repeater_bridge_espnow_mqtt"
   build_firmware "MTL_1_repeater_mqtt"
   build_firmware "MTL_1_SX1268_repeater_mqtt"
+  build_firmware "MTL_1_repeater_bridge_espnow_mqtt"
   build_firmware "MTL_1_SX1268_repeater_bridge_espnow_mqtt"
 
   # build_all_firmwares_by_suffix "_repeater_mqtt"
