@@ -17,7 +17,7 @@
 #include <time.h>
 
 #ifndef FIRMWARE_VERSION
-  #define FIRMWARE_VERSION "v1.16.0-meshcore.spb.ru"
+  #define FIRMWARE_VERSION "v1.18.0-meshcore.spb.ru"
 #endif
 
 #ifndef FIRMWARE_BUILD_DATE

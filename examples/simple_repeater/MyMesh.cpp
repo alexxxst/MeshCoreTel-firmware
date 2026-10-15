@@ -2817,29 +2817,6 @@ void MyMesh::handleCommand(uint32_t sender_timestamp, char *command, char *reply
     } else {
       strcpy(reply, "Err - usage: blacklist <path|chan> <list|add|rem|clear> [hex|#name[,...]]");
     }
-  } else if (strcmp(command, "get radio.fem.rxgain") == 0) {
-    // EastMesh: persist FEM LNA state in the binary prefs field (repeater keeps legacy format)
-    sprintf(reply, "> %s", board.isLoRaFemLnaEnabled() ? "on" : "off");
-  } else if (memcmp(command, "set radio.fem.rxgain ", 21) == 0) {
-    if (memcmp(&command[21], "on", 2) == 0) {
-      if (board.setLoRaFemLnaEnabled(true)) {
-        _prefs.radio_fem_rxgain = 1;
-        savePrefs();
-        strcpy(reply, "OK - LoRa FEM RX gain on");
-      } else {
-        strcpy(reply, "Error: failed to apply LoRa FEM RX gain");
-      }
-    } else if (memcmp(&command[21], "off", 3) == 0) {
-      if (board.setLoRaFemLnaEnabled(false)) {
-        _prefs.radio_fem_rxgain = 0;
-        savePrefs();
-        strcpy(reply, "OK - LoRa FEM RX gain off");
-      } else {
-        strcpy(reply, "Error: failed to apply LoRa FEM RX gain");
-      }
-    } else {
-      strcpy(reply, "Error: state must be on or off");
-    }
   } else{
     _cli.handleCommand(sender_timestamp, command, reply);  // common CLI commands
   }
