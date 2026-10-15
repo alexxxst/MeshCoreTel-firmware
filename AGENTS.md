@@ -153,7 +153,7 @@ Do not document companion rescue commands in repeater docs. Do not assume web-pa
 Companion release/version rule:
 
 - companion tags use the official upstream MeshCore release version only
-- the current official MeshCore version is `v1.14.1`
+- the current official MeshCore version is `v1.18.0`
 - companion releases are only cut when `meshcore-dev/MeshCore` has made an official release
 - do not invent separate EastMesh companion version numbers
 
@@ -193,6 +193,10 @@ When asked to pull from upstream MeshCore:
 - merge the finished integration branch back into `develop`
 
 Do not merge upstream directly into `main`.
+
+### Repeater prefs storage (hard constraint)
+
+The repeater keeps its legacy **binary** `NodePrefs` on-disk format under `/com_prefs`, byte-for-byte, for upgrade compatibility. Upstream migrated prefs to `ConfigSerializer` (JSON text, `/prefs.json`); only the repeater role keeps the binary path (see `CommonCLI::loadPrefs`/`savePrefs` role branch and `loadPrefsIntRepeater`/`savePrefsRepeater`). New fields must be appended at the end of the layout; existing byte offsets must never shift. Companion/room-server/sensor use the upstream text format.
 
 ## Scope Boundaries
 
